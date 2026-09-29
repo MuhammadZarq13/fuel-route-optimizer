@@ -1,0 +1,72 @@
+{
+  "info": {
+    "name": "Fuel Route Trip Planner",
+    "description": "Demo requests for POST /api/trip-plan/ — used in the Loom walkthrough.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" }
+  ],
+  "item": [
+    {
+      "name": "Long haul trip (multiple fuel stops)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Denver, CO\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
+      }
+    },
+    {
+      "name": "Short trip (no fuel stop needed, under 500mi)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Indianapolis, IN\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
+      }
+    },
+    {
+      "name": "Cross-country trip (many fuel stops)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Los Angeles, CA\",\n  \"finish\": \"New York, NY\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
+      }
+    },
+    {
+      "name": "Error - unrecognized location (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"asdkjaslkdjalksjd nowhere xyz123\",\n  \"finish\": \"Denver, CO\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
+      }
+    },
+    {
+      "name": "Error - missing field (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Chicago, IL\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
+      }
+    }
+  ]
+}
