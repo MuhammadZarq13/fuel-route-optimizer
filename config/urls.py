@@ -17,6 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from fuel.views import TripPlanView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/trip-plan/', TripPlanView.as_view(), name='trip-plan'),
 ]
