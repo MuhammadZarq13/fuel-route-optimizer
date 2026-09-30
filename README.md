@@ -125,20 +125,25 @@ SQLite (used here for a zero-setup demo) or PostgreSQL.
 itself has legitimate duplicate OPIS IDs for renamed/rebranded stops, so
 silently re-running the loader would double every row rather than error.
 
-**Known scalability limit, measured, not just theorized**: the
-bounding-box prefilter is tight for a route that's roughly north-south or
-east-west, but for a diagonal transcontinental route it barely filters at
-all — profiling a real LA→NYC request showed its bbox contained 1,863 of
-3,575 geocoded stations (52% of the whole table) before the precise
-per-station Haversine pass even starts, which is what most of that
-request's ~1s corridor-filtering time goes to. This gets worse, not
-better, as the station dataset grows — it's an `O(candidates ×
-route_points)` Python loop, not an indexed spatial query. The correct
-fix at real scale is PostGIS: store the route as a `LineString` and use
-one indexed `ST_DWithin` query instead of a bounding box plus a Python
-scan. Not implemented here because it would mean requiring PostGIS for
-what's otherwise a SQLite-friendly demo — flagged here rather than
-quietly left for someone to discover under load.
+**Corridor scalability**: a single bounding box around an entire route is
+tight for a north-south/east-west route but barely filters anything for a
+diagonal one — profiling a real LA→NYC request showed a whole-route bbox
+matched 1,863 of 3,575 geocoded stations (52% of the whole table) before
+the precise per-station Haversine pass even started. Fixed by chunking the
+route into ~100-mile segments, each with its own tight bbox, OR'd together
+into one query (`ROUTE_SEGMENT_LENGTH_MILES` in `fuel/services/corridor.py`)
+— the per-station exact-distance pass then only scans points from the
+segment(s) that station's bbox actually matched, not the whole route.
+Measured on the same LA→NYC request: corridor filtering went from 0.99s
+to 0.03s (37x), full cold-cache request from 6.0s to 2.8s, with
+byte-identical output. Candidate count now tracks route length and
+station density near the route, not total table size or how diagonal the
+route is — it won't get worse as geocoding coverage grows toward 100%.
+At genuinely large scale (a much bigger station table, e.g. hundreds of
+thousands of rows), the next step past this would be PostGIS — store the
+route as a `LineString` and use one indexed `ST_DWithin` query instead of
+segmented bounding boxes — but that wasn't needed to fix the problem that
+was actually measured here.
 
 ### Fuel station geocoding
 
