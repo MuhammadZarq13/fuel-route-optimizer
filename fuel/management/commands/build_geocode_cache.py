@@ -59,10 +59,17 @@ class Command(BaseCommand):
                 request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
                 with urllib.request.urlopen(request, timeout=10) as response:
                     data = json.loads(response.read())
-                cache[key] = {"lat": float(data[0]["lat"]), "lon": float(data[0]["lon"])} if data else None
-            except Exception as exc:  # noqa: BLE001 - best-effort batch geocode, log and continue
-                self.stderr.write(f"Failed to geocode {key}: {exc}")
-                cache[key] = None
+            except Exception as exc:  # noqa: BLE001 - transient network/HTTP failure
+                # Deliberately don't write anything to the cache here: this
+                # pair stays "not yet attempted" and gets retried on the
+                # next run, instead of being permanently mislabeled as
+                # ungeocodable just because one request timed out.
+                self.stderr.write(f"Failed to geocode {key} (will retry next run): {exc}")
+                continue
+
+            # An empty result list is a genuine "Nominatim has no match" —
+            # that's fine to cache as a permanent miss.
+            cache[key] = {"lat": float(data[0]["lat"]), "lon": float(data[0]["lon"])} if data else None
 
             if i % 25 == 0:
                 cache_path.write_text(json.dumps(cache))
