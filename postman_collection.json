@@ -15,7 +15,8 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Denver, CO\"\n}"
+          "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Denver, CO\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
         "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
       }
@@ -27,7 +28,8 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Indianapolis, IN\"\n}"
+          "raw": "{\n  \"start\": \"Chicago, IL\",\n  \"finish\": \"Indianapolis, IN\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
         "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
       }
@@ -39,7 +41,8 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"start\": \"Los Angeles, CA\",\n  \"finish\": \"New York, NY\"\n}"
+          "raw": "{\n  \"start\": \"Los Angeles, CA\",\n  \"finish\": \"New York, NY\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
         "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
       }
@@ -51,7 +54,8 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"start\": \"asdkjaslkdjalksjd nowhere xyz123\",\n  \"finish\": \"Denver, CO\"\n}"
+          "raw": "{\n  \"start\": \"asdkjaslkdjalksjd nowhere xyz123\",\n  \"finish\": \"Denver, CO\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
         "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
       }
@@ -63,7 +67,8 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"start\": \"Chicago, IL\"\n}"
+          "raw": "{\n  \"start\": \"Chicago, IL\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
         "url": { "raw": "{{baseUrl}}/api/trip-plan/", "host": ["{{baseUrl}}"], "path": ["api", "trip-plan", ""] }
       }
