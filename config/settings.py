@@ -138,6 +138,14 @@ REST_FRAMEWORK = {
         if DEBUG
         else ['rest_framework.renderers.JSONRenderer']
     ),
+    # Every request here costs up to 3 calls against free, rate-limited
+    # third-party APIs (Nominatim's usage policy is 1 req/s; abusing it
+    # risks the server's IP getting blocked for everyone). The endpoint has
+    # no auth, so this is the only thing standing between it and being
+    # hammered. 20/min is generous for interactive use/testing but caps
+    # worst-case sustained load.
+    'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.AnonRateThrottle'],
+    'DEFAULT_THROTTLE_RATES': {'anon': '20/min'},
 }
 
 # LocMemCache is per-process: fine for local dev, but behind multiple
