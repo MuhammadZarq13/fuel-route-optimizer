@@ -26,6 +26,16 @@ python manage.py runserver
 Django 5.2 requires Python 3.10+; use `python3.12`/`python3.11` explicitly
 if your default `python3` is older.
 
+**Environment variables** (all optional, sensible defaults for local
+dev — see `config/settings.py`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DJANGO_DEBUG` | `true` | Set to `false` for production-like settings (also required before `DJANGO_ALLOWED_HOSTS` matters) |
+| `DJANGO_ALLOWED_HOSTS` | *(empty)* | Comma-separated hostnames, required once `DJANGO_DEBUG=false` |
+| `DJANGO_SECRET_KEY` | insecure dev key | Set a real secret in production |
+| `REDIS_URL` | *(unset → in-memory cache)* | e.g. `redis://localhost:6379/0` — shares the geocode/route cache across worker processes |
+
 Then:
 
 ```bash
