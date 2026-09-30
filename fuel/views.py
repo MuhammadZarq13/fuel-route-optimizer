@@ -24,6 +24,11 @@ class TripPlanView(APIView):
     request.
     """
 
+    def get_serializer(self, *args, **kwargs):
+        # Lets DRF's browsable API render a proper start/finish form
+        # instead of a raw JSON textarea when viewed in a browser.
+        return TripPlanRequestSerializer(*args, **kwargs)
+
     def post(self, request):
         request_serializer = TripPlanRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
