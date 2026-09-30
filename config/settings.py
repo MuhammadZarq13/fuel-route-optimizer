@@ -140,12 +140,29 @@ REST_FRAMEWORK = {
     ),
 }
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'trip-planner-cache',
+# LocMemCache is per-process: fine for local dev, but behind multiple
+# gunicorn/uWSGI workers each worker has its own cache, so a geocode/route
+# cache hit in worker 1 is a miss in worker 2 -- the caching strategy
+# doesn't actually help under real concurrency. Set REDIS_URL to get a
+# cache shared across every worker instead; nothing else in the app needs
+# to change since fuel/services/*.py only talk to django.core.cache.
+REDIS_URL = os.environ.get('REDIS_URL')
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'trip-planner-cache',
+        }
+    }
 
 # External free APIs used for routing/geocoding (see fuel/services/).
 OSRM_BASE_URL = os.environ.get('OSRM_BASE_URL', 'https://router.project-osrm.org')
