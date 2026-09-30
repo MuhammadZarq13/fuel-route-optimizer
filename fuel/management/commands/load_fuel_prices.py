@@ -51,6 +51,15 @@ class Command(BaseCommand):
 
         geocode_cache = json.loads(cache_path.read_text())
 
+        existing_count = FuelStation.objects.count()
+        if existing_count and not options["clear"]:
+            raise CommandError(
+                f"FuelStation already has {existing_count} rows. bulk_create doesn't "
+                "dedupe (the source CSV even has legitimate duplicate OPIS IDs for "
+                "renamed/rebranded stops), so re-running this without --clear would "
+                "silently double every row. Re-run with --clear to replace them."
+            )
+
         if options["clear"]:
             deleted, _ = FuelStation.objects.all().delete()
             self.stdout.write(f"Cleared {deleted} existing FuelStation rows.")
