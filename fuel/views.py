@@ -1,9 +1,11 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from fuel.serializers import TripPlanRequestSerializer, TripPlanResponseSerializer
-from fuel.services.corridor import find_candidate_stops
+from fuel.services.corridor import build_route_points, find_candidate_stops
 from fuel.services.exceptions import (
     InfeasibleRouteError,
     LocationNotFoundError,
@@ -21,7 +23,8 @@ class TripPlanView(APIView):
     Makes exactly 3 external HTTP calls per request in the worst case
     (geocode start, geocode finish, one OSRM route call) — fewer if the
     geocode/route results are already cached from a prior identical
-    request.
+    request. The two geocode calls are independent, so they run
+    concurrently on a 2-worker thread pool rather than back-to-back.
     """
 
     def get_serializer(self, *args, **kwargs):
@@ -36,10 +39,19 @@ class TripPlanView(APIView):
         finish_query = request_serializer.validated_data["finish"]
 
         try:
-            start_coords = geocode(start_query)
-            finish_coords = geocode(finish_query)
+            # `with` guarantees executor.shutdown(wait=True) runs on the
+            # way out (success, exception, anything) -- both worker
+            # threads are always joined here before this block exits, so
+            # nothing outlives the request.
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                start_future = executor.submit(geocode, start_query)
+                finish_future = executor.submit(geocode, finish_query)
+                start_coords = start_future.result()
+                finish_coords = finish_future.result()
+
             route = get_route(start_coords, finish_coords)
-            candidates = find_candidate_stops(route)
+            route_points = build_route_points(route)
+            candidates = find_candidate_stops(route_points)
             plan = plan_refueling(candidates, route.distance_miles)
         except LocationNotFoundError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
@@ -50,7 +62,14 @@ class TripPlanView(APIView):
 
         payload = {
             "distance_miles": round(route.distance_miles, 1),
-            "route": {"type": "LineString", "coordinates": [list(c) for c in route.coordinates]},
+            # Downsampled to ~1 point per 2 miles (build_route_points), not
+            # OSRM's raw polyline -- that can be tens of thousands of
+            # points on a cross-country route, which is far more detail
+            # than a map needs and makes the response needlessly large.
+            "route": {
+                "type": "LineString",
+                "coordinates": [[p.longitude, p.latitude] for p in route_points],
+            },
             "fuel_stops": [
                 {
                     "name": s.candidate.station.name,

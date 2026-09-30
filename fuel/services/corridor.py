@@ -82,12 +82,16 @@ def _route_bounding_box(points: list[RoutePoint], buffer_miles: float) -> tuple[
     )
 
 
-def find_candidate_stops(route: Route) -> list[CandidateStop]:
+def find_candidate_stops(route_points: list[RoutePoint]) -> list[CandidateStop]:
     """Find fuel stations near the route, each tagged with how far along
     the route it sits. Uses a DB-level bounding-box prefilter (index-backed
     on latitude/longitude) before the precise Haversine check, so this
-    stays fast even with thousands of stations in the table."""
-    route_points = build_route_points(route)
+    stays fast even with thousands of stations in the table.
+
+    Takes pre-built route_points (see build_route_points) rather than a
+    Route, so a caller that also needs the downsampled points for its own
+    purposes (e.g. a lean response payload) doesn't pay to compute them
+    twice."""
     min_lat, max_lat, min_lon, max_lon = _route_bounding_box(route_points, CORRIDOR_WIDTH_MILES)
 
     nearby_stations = FuelStation.objects.filter(
