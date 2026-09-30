@@ -124,6 +124,17 @@ reasonable against Nominatim's 1 req/s usage policy. Instead:
   in `fuel/services/corridor.py`) is set wide enough (15 miles) to absorb
   that imprecision; the real fix, if exact station coordinates were
   available, would be to tighten it back down.
+- The committed cache covers **~1,715 of the ~3,900** unique City+State
+  pairs (~44% — enough that every route exercised in testing/the demo
+  returns multiple real, differently-priced candidate stops). Geocoding
+  the remainder against a free, rate-limited (1 req/s) API is a genuine
+  ~40-minute wall-clock job with no way to safely parallelize it against
+  a single public Nominatim instance, so it wasn't run to full completion
+  for this exercise. Extending coverage is a single command:
+  `python manage.py build_geocode_cache` (resumable — it only geocodes
+  pairs not already in the cache). A station with no cached coordinates
+  is loaded with `latitude`/`longitude` as `null` and simply excluded from
+  route matching rather than causing an error.
 
 ### The refueling algorithm
 
