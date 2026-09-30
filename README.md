@@ -94,7 +94,22 @@ POST /api/trip-plan/
 **External API budget**: at most 3 calls per request (2 geocodes + 1
 route), and fewer on a cache hit — well inside the "one ideal, two or
 three acceptable" limit. Fuel station coordinates are **not** geocoded
-per request; see "Fuel station geocoding" below.
+per request; see "Fuel station geocoding" below. The two geocode calls
+are independent (start/finish), so they run concurrently on a small
+thread pool (`fuel/views.py`) instead of back-to-back — measured this
+against a real Chicago→Denver-style transcontinental request and it cut
+that portion of latency roughly in half. Both HTTP clients also share a
+single `requests.Session` with automatic retry on transient failures
+(`fuel/services/http.py`) — we hit real connection resets from Nominatim
+under load during development, so this isn't hypothetical.
+
+The `route` field in the response is the **downsampled** polyline
+(~1 point per 2 miles, the same points used internally to place fuel
+stations), not OSRM's raw geometry. On a cross-country route OSRM can
+return 30,000+ raw points; a map doesn't need that much detail, and
+shipping it nearly 20x'd the response size for no benefit (measured:
+786 KB → 34 KB on a 2,800-mile LA→NYC route with no loss of visual
+fidelity).
 
 ### Data model
 
@@ -103,9 +118,27 @@ city, state, rack ID, price per gallon, and resolved latitude/longitude
 (nullable). Indexed on `(state, city)` and on `(latitude, longitude)` for
 the corridor bounding-box query. The bounding-box filter is written as a
 plain `latitude__range`/`longitude__range` query so it works unchanged on
-SQLite (used here for a zero-setup demo) or PostgreSQL; on Postgres the
-natural upgrade is a PostGIS `GiST` index and a real `ST_DWithin` query,
-which wasn't worth introducing for a dataset this size.
+SQLite (used here for a zero-setup demo) or PostgreSQL.
+
+`load_fuel_prices` refuses to run against a non-empty table unless
+`--clear` is passed — `bulk_create` doesn't dedupe, and the source CSV
+itself has legitimate duplicate OPIS IDs for renamed/rebranded stops, so
+silently re-running the loader would double every row rather than error.
+
+**Known scalability limit, measured, not just theorized**: the
+bounding-box prefilter is tight for a route that's roughly north-south or
+east-west, but for a diagonal transcontinental route it barely filters at
+all — profiling a real LA→NYC request showed its bbox contained 1,863 of
+3,575 geocoded stations (52% of the whole table) before the precise
+per-station Haversine pass even starts, which is what most of that
+request's ~1s corridor-filtering time goes to. This gets worse, not
+better, as the station dataset grows — it's an `O(candidates ×
+route_points)` Python loop, not an indexed spatial query. The correct
+fix at real scale is PostGIS: store the route as a `LineString` and use
+one indexed `ST_DWithin` query instead of a bounding box plus a Python
+scan. Not implemented here because it would mean requiring PostGIS for
+what's otherwise a SQLite-friendly demo — flagged here rather than
+quietly left for someone to discover under load.
 
 ### Fuel station geocoding
 
