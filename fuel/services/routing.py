@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from fuel.services.exceptions import RouteNotFoundError, UpstreamServiceError
+from fuel.services.http import SESSION
 
 REQUEST_TIMEOUT_SECONDS = 15
 METERS_PER_MILE = 1609.344
@@ -40,7 +41,7 @@ def get_route(start: tuple[float, float], finish: tuple[float, float]) -> Route:
     params = {"overview": "full", "geometries": "geojson", "steps": "false"}
 
     try:
-        response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT_SECONDS)
+        response = SESSION.get(url, params=params, timeout=REQUEST_TIMEOUT_SECONDS)
         response.raise_for_status()
         data = response.json()
     except (requests.RequestException, ValueError) as exc:

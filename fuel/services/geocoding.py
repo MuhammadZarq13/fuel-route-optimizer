@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from fuel.services.exceptions import LocationNotFoundError, UpstreamServiceError
+from fuel.services.http import SESSION
 
 USER_AGENT = "django-fuel-route-planner/1.0 (coding assessment)"
 REQUEST_TIMEOUT_SECONDS = 8
@@ -30,7 +31,7 @@ def geocode(location: str) -> tuple[float, float]:
         "countrycodes": "us",
     }
     try:
-        response = requests.get(
+        response = SESSION.get(
             f"{settings.NOMINATIM_BASE_URL}/search",
             params=params,
             headers={"User-Agent": USER_AGENT},
